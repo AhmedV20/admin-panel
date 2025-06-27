@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useCallback } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
 
@@ -94,11 +94,12 @@ const AdminContextProvider = (props) => {
     }
   ]);
   const [dashData, setDashData] = useState(null);
+  const [users, setUsers] = useState([]);
 
   const getAllDoctors = async () => {
     try {
       if (!aToken) return;
-      const response = await axios.get(`${API_BASE_URL}/doctors`, {
+      const response = await axios.get(`${API_BASE_URL}/doctors?includeInactive=true`, {
         headers: {
           Authorization: `Bearer ${aToken}`,
         },
@@ -112,27 +113,60 @@ const AdminContextProvider = (props) => {
     }
   };
 
-  const changeAvailability = async (docId) => {
+  const activateDoctor = async (docId) => {
     try {
-      setDoctors(prevDoctors => 
-        prevDoctors.map(doctor => 
-          doctor._id === docId 
-            ? { ...doctor, isAvailable: !doctor.isAvailable }
-            : doctor
-        )
-      );
-      toast.success("Availability status changed successfully");
+      await axios.patch(`${API_BASE_URL}/doctors/${docId}/activate`, {}, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      getAllDoctors();
+      toast.success("Doctor activated successfully");
     } catch (error) {
-      toast.error("Error changing availability status");
+      toast.error("Failed to activate doctor.");
     }
   };
 
-  const getAllAppointments = async () => {
+  const deactivateDoctor = async (docId) => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/appointments`, {
-        headers: {
-          Authorization: `Bearer ${aToken}`
-        }
+      await axios.patch(`${API_BASE_URL}/doctors/${docId}/deactivate`, {}, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      getAllDoctors();
+      toast.success("Doctor deactivated successfully");
+    } catch (error) {
+      toast.error("Failed to deactivate doctor.");
+    }
+  };
+
+  const changeAvailability = async (docId, isActive) => {
+    if (isActive) {
+      await deactivateDoctor(docId);
+    } else {
+      await activateDoctor(docId);
+    }
+  };
+
+  const notifyDoctor = async (docId, message) => {
+    try {
+      await axios.post(`${API_BASE_URL}/doctors/${docId}/notify`, { message }, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Notification sent to doctor");
+    } catch (error) {
+      toast.error("Failed to send notification.");
+    }
+  };
+
+  const getAllAppointments = async (filters = {}) => {
+    try {
+      let url = `${API_BASE_URL}/appointments`;
+      const params = [];
+      if (filters.status) params.push(`status=${filters.status}`);
+      if (filters.doctorId) params.push(`doctorId=${filters.doctorId}`);
+      if (filters.userId) params.push(`userId=${filters.userId}`);
+      if (filters.includeAll) params.push(`includeAll=true`);
+      if (params.length) url += `?${params.join('&')}`;
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${aToken}` }
       });
       setAppointments(res.data);
       return res.data || [];
@@ -143,16 +177,37 @@ const AdminContextProvider = (props) => {
     }
   };
 
+  const approveAppointment = async (appointmentId) => {
+    try {
+      await axios.patch(`${API_BASE_URL}/appointments/${appointmentId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Appointment approved successfully");
+      getAllAppointments();
+    } catch (error) {
+      toast.error("Failed to approve appointment");
+    }
+  };
+
+  const completeAppointment = async (appointmentId) => {
+    try {
+      await axios.patch(`${API_BASE_URL}/appointments/${appointmentId}/complete`, {}, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Appointment marked as completed");
+      getAllAppointments();
+    } catch (error) {
+      toast.error("Failed to complete appointment");
+    }
+  };
+
   const cancelAppointment = async (appointmentId) => {
     try {
-      setAppointments(prevAppointments =>
-        prevAppointments.map(appointment =>
-          appointment._id === appointmentId
-            ? { ...appointment, cancelled: true }
-            : appointment
-        )
-      );
+      await axios.patch(`${API_BASE_URL}/appointments/${appointmentId}/cancel`, {}, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
       toast.success("Appointment cancelled successfully");
+      getAllAppointments();
     } catch (error) {
       toast.error("Error cancelling appointment");
     }
@@ -175,62 +230,70 @@ const AdminContextProvider = (props) => {
 
   const getDashData = async () => {
     if (!aToken) return;
-
     try {
-      let doctorsData = [];
-      let appointmentsData = [];
-      let usersData = [];
-
-      try {
-        doctorsData = await getAllDoctors();
-      } catch (error) {
-        console.error("Failed to fetch doctors:", error);
-      }
-
-      try {
-        appointmentsData = await getAllAppointments();
-      } catch (error) {
-        console.error("Failed to fetch appointments:", error);
-      }
-
-      try {
-        const response = await axios.get(`${API_BASE_URL}/users`, {
-          headers: { Authorization: `Bearer ${aToken}` },
-        });
-        if (Array.isArray(response.data)) {
-          usersData = response.data;
-        } else {
-          console.warn("Data from /api/users is not an array:", response.data);
-          usersData = [];
-        }
-      } catch (error) {
-        console.error("Failed to fetch users:", error);
-      }
-
-      const totalDoctors = doctorsData.length;
-      const totalAppointments = appointmentsData.length;
-      const totalEarnings = appointmentsData
-        .filter((app) => app.isCompleted)
-        .reduce((sum, app) => sum + (app.amount || 0), 0);
-
-      const totalPatients = usersData.filter(
-        (user) => user.role === "Patient"
-      ).length;
-
-      const latestAppointments = appointmentsData
-        .sort((a, b) => new Date(b.slotDate) - new Date(a.slotDate))
-        .slice(0, 5);
-
+      const response = await axios.get(`${API_BASE_URL}/admin/dashboard-stats`, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
       setDashData({
-        totalDoctors,
-        totalAppointments,
-        totalPatients,
-        totalEarnings,
-        latestAppointments,
+        totalDoctors: response.data.totalDoctors,
+        totalAppointments: response.data.totalAppointments,
+        totalPatients: response.data.totalPatients,
+        totalEarnings: response.data.totalEarnings,
+        latestAppointments: response.data.recentAppointments,
       });
     } catch (error) {
-      toast.error("An unexpected error occurred while fetching dashboard data.");
-      console.error("Error in getDashData:", error);
+      toast.error("Failed to fetch dashboard stats.");
+      setDashData(null);
+    }
+  };
+
+  const getAllUsers = useCallback(async () => {
+    try {
+      if (!aToken) return;
+      const res = await axios.get(`${API_BASE_URL}/admin/users`, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      setUsers(res.data);
+      return res.data;
+    } catch (error) {
+      toast.error("Failed to fetch users list.");
+      setUsers([]);
+      return [];
+    }
+  }, [aToken]);
+
+  const updateUser = async (userId, data) => {
+    try {
+      await axios.put(`${API_BASE_URL}/admin/user/${userId}`, data, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("User updated successfully");
+      getAllUsers();
+    } catch (error) {
+      toast.error("Failed to update user.");
+    }
+  };
+
+  const deleteUser = async (userId) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/admin/user/${userId}`, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("User deleted successfully");
+      getAllUsers();
+    } catch (error) {
+      toast.error("Failed to delete user.");
+    }
+  };
+
+  const notifyUser = async (userId, message) => {
+    try {
+      await axios.post(`${API_BASE_URL}/admin/user/${userId}/notify`, { message }, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Notification sent to user");
+    } catch (error) {
+      toast.error("Failed to send notification.");
     }
   };
 
@@ -240,14 +303,25 @@ const AdminContextProvider = (props) => {
     doctors,
     setDoctors,
     getAllDoctors,
+    activateDoctor,
+    deactivateDoctor,
     changeAvailability,
+    notifyDoctor,
     appointments,
     setAppointments,
     getAllAppointments,
+    approveAppointment,
+    completeAppointment,
     cancelAppointment,
     deleteDoctor,
     dashData,
     getDashData,
+    users,
+    setUsers,
+    getAllUsers,
+    updateUser,
+    deleteUser,
+    notifyUser,
   };
 
   return (

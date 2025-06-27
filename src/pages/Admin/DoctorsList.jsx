@@ -4,13 +4,16 @@ import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { assets } from "../../assets/assets";
 import ConfirmationModal from "../../components/ConfirmationModal";
+import notifyIcon from '../../assets/appointment_icon.svg';
 
 const DoctorsList = () => {
-  const { doctors, getAllDoctors, changeAvailability, deleteDoctor, aToken } =
+  const { doctors, getAllDoctors, changeAvailability, deleteDoctor, notifyDoctor, aToken } =
     useContext(AdminContext);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [doctorToDelete, setDoctorToDelete] = useState(null);
+  const [notifyModal, setNotifyModal] = useState({ open: false, doctor: null });
+  const [notifyMessage, setNotifyMessage] = useState('');
 
   useEffect(() => {
     if (aToken) {
@@ -46,6 +49,13 @@ const DoctorsList = () => {
     closeDeleteModal();
   };
 
+  const handleNotify = async () => {
+    if (!notifyModal.doctor) return;
+    await notifyDoctor(notifyModal.doctor.id || notifyModal.doctor._id, notifyMessage);
+    setNotifyModal({ open: false, doctor: null });
+    setNotifyMessage('');
+  };
+
   return (
     <>
       <ConfirmationModal
@@ -56,6 +66,20 @@ const DoctorsList = () => {
       >
         Are you sure you want to permanently delete this doctor? This action cannot be undone.
       </ConfirmationModal>
+
+      {/* Notify Modal */}
+      {notifyModal.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow w-96">
+            <h3 className="text-lg font-bold mb-2">Send Notification to Dr. {notifyModal.doctor.firstName} {notifyModal.doctor.lastName}</h3>
+            <textarea className="border p-2 w-full mb-2" placeholder="Message" value={notifyMessage} onChange={e => setNotifyMessage(e.target.value)} />
+            <div className="flex gap-2 mt-4">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={handleNotify}>Send</button>
+              <button className="bg-gray-300 px-4 py-2 rounded" onClick={() => setNotifyModal({ open: false, doctor: null })}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-6 bg-gray-50 min-h-screen w-full">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">Our Doctors</h1>
@@ -81,20 +105,26 @@ const DoctorsList = () => {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <span
-                        className={`h-2.5 w-2.5 rounded-full ${
-                          doctor.isAvailable ? "bg-green-500" : "bg-red-500"
-                        }`}
-                      ></span>
-                      <p
-                        className={`text-sm font-semibold ${
-                          doctor.isAvailable ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {doctor.isAvailable ? "Available" : "Unavailable"}
-                      </p>
+                      <span className={`h-2.5 w-2.5 rounded-full ${doctor.isActive ? 'bg-green-500' : 'bg-gray-400'}`}></span>
+                      <p className={`text-sm font-semibold ${doctor.isActive ? 'text-green-600' : 'text-gray-600'}`}>{doctor.isActive ? 'Active' : 'Inactive'}</p>
+                      <span className={`h-2.5 w-2.5 rounded-full ${doctor.isAvailable ? 'bg-green-500' : 'bg-red-500'}`}></span>
+                      <p className={`text-sm font-semibold ${doctor.isAvailable ? 'text-green-600' : 'text-red-600'}`}>{doctor.isAvailable ? 'Available' : 'Unavailable'}</p>
                     </div>
                     <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => changeAvailability(doctor.id || doctor._id, doctor.isActive)}
+                        className={`p-1 rounded-full ${doctor.isActive ? 'bg-red-100 hover:bg-red-200' : 'bg-green-100 hover:bg-green-200'}`}
+                        title={doctor.isActive ? 'Deactivate' : 'Activate'}
+                      >
+                        {doctor.isActive ? 'Deactivate' : 'Activate'}
+                      </button>
+                      <button
+                        onClick={() => setNotifyModal({ open: true, doctor })}
+                        className="p-1 rounded-full hover:bg-blue-100"
+                        title="Notify"
+                      >
+                        <img src={notifyIcon} alt="Notify" className="w-5 h-5" />
+                      </button>
                       <Link
                         to={`/admin/edit-doctor/${doctor.id || doctor._id}`}
                         className="p-1 rounded-full hover:bg-gray-100"

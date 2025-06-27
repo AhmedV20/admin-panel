@@ -5,17 +5,26 @@ import { assets } from "../../assets/assets";
 import { toast } from "react-toastify";
 
 const AllAppointments = () => {
-  const { aToken, appointments, getAllAppointments, cancelAppointment, setAppointments } =
+  const { aToken, appointments, getAllAppointments, cancelAppointment, approveAppointment, completeAppointment, setAppointments, doctors, getAllDoctors, users, getAllUsers } =
     useContext(AdminContext);
   const { calculateAge, slotDateFormat, currency } = useContext(AppContext);
   const [filterStatus, setFilterStatus] = useState("all");
   const [viewMode, setViewMode] = useState("cards"); // cards or table
+  const [filterDoctor, setFilterDoctor] = useState("");
+  const [filterUser, setFilterUser] = useState("");
 
   useEffect(() => {
     if (aToken) {
-      getAllAppointments();
+      getAllDoctors && getAllDoctors();
+      getAllUsers && getAllUsers();
+      getAllAppointments({
+        status: filterStatus !== "all" ? filterStatus : undefined,
+        doctorId: filterDoctor || undefined,
+        userId: filterUser || undefined,
+        includeAll: true
+      });
     }
-  }, [aToken]);
+  }, [aToken, filterStatus, filterDoctor, filterUser]);
 
   // Helper function to format date
   const formatDate = (dateString) => {
@@ -47,29 +56,10 @@ const AllAppointments = () => {
     return appointment.status === filterStatus;
   });
 
-  // Cancel appointment
-  const cancelAppointmentHandler = (appointmentId) => {
-    setAppointments(prevAppointments =>
-      prevAppointments.map(appointment =>
-        appointment._id === appointmentId
-          ? { ...appointment, status: "cancelled" }
-          : appointment
-      )
-    );
-    toast.success("Appointment cancelled successfully");
-  };
-
-  // Complete appointment
-  const completeAppointment = (appointmentId) => {
-    setAppointments(prevAppointments =>
-      prevAppointments.map(appointment =>
-        appointment._id === appointmentId
-          ? { ...appointment, status: "completed" }
-          : appointment
-      )
-    );
-    toast.success("Appointment marked as completed");
-  };
+  // Action handlers
+  const handleApprove = (id) => approveAppointment(id);
+  const handleComplete = (id) => completeAppointment(id);
+  const handleCancel = (id) => cancelAppointment(id);
 
   // Get status color and icon
   const getStatusInfo = (status) => {
@@ -142,6 +132,20 @@ const AllAppointments = () => {
                 <option value="pending">Pending</option>
                 <option value="completed">Completed</option>
                 <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            {/* Filter by doctor and user */}
+            <div className="flex items-center gap-3">
+              <label className="text-sm font-medium text-gray-700">Doctor:</label>
+              <select value={filterDoctor} onChange={e => setFilterDoctor(e.target.value)} className="border border-gray-300 rounded-xl px-4 py-2 bg-white">
+                <option value="">All</option>
+                {doctors && doctors.map(doc => <option key={doc.id || doc._id} value={doc.id || doc._id}>{doc.firstName} {doc.lastName}</option>)}
+              </select>
+              <label className="text-sm font-medium text-gray-700">Patient:</label>
+              <select value={filterUser} onChange={e => setFilterUser(e.target.value)} className="border border-gray-300 rounded-xl px-4 py-2 bg-white">
+                <option value="">All</option>
+                {users && users.map(user => <option key={user.id} value={user.id}>{user.firstName} {user.lastName}</option>)}
               </select>
             </div>
           </div>
@@ -273,16 +277,22 @@ const AllAppointments = () => {
                   {appointment.status === "pending" && (
                     <div className="flex gap-3">
                       <button
-                        onClick={() => completeAppointment(appointment._id)}
-                        className="flex-1 bg-green-500 text-white py-3 px-4 rounded-xl font-medium hover:bg-green-600 transition-all shadow-sm"
+                        onClick={() => handleApprove(appointment._id)}
+                        className="flex-1 bg-blue-500 text-white py-3 px-4 rounded-xl font-medium hover:bg-blue-600 transition-all shadow-sm"
                       >
-                        ✓ Complete
+                        Approve
                       </button>
                       <button
-                        onClick={() => cancelAppointmentHandler(appointment._id)}
+                        onClick={() => handleComplete(appointment._id)}
+                        className="flex-1 bg-green-500 text-white py-3 px-4 rounded-xl font-medium hover:bg-green-600 transition-all shadow-sm"
+                      >
+                        Complete
+                      </button>
+                      <button
+                        onClick={() => handleCancel(appointment._id)}
                         className="flex-1 bg-red-500 text-white py-3 px-4 rounded-xl font-medium hover:bg-red-600 transition-all shadow-sm"
                       >
-                        ✕ Cancel
+                        Cancel
                       </button>
                     </div>
                   )}
@@ -378,16 +388,23 @@ const AllAppointments = () => {
                           {appointment.status === "pending" && (
                             <>
                               <button
-                                onClick={() => completeAppointment(appointment._id)}
+                                onClick={() => handleApprove(appointment._id)}
+                                className="p-2 bg-blue-100 text-blue-700 rounded-xl hover:bg-blue-200 transition-colors"
+                                title="Approve"
+                              >
+                                <img src={assets.tick_icon} alt="Approve" className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleComplete(appointment._id)}
                                 className="p-2 bg-green-100 text-green-700 rounded-xl hover:bg-green-200 transition-colors"
-                                title="Mark as completed"
+                                title="Complete"
                               >
                                 <img src={assets.tick_icon} alt="Complete" className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => cancelAppointmentHandler(appointment._id)}
+                                onClick={() => handleCancel(appointment._id)}
                                 className="p-2 bg-red-100 text-red-700 rounded-xl hover:bg-red-200 transition-colors"
-                                title="Cancel appointment"
+                                title="Cancel"
                               >
                                 <img src={assets.cancel_icon} alt="Cancel" className="w-4 h-4" />
                               </button>

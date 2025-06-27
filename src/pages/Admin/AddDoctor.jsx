@@ -18,18 +18,29 @@ const AddDoctor = () => {
   const [about, setAbout] = useState("");
   const [fees, setFees] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
+  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [address, setAddress] = useState("");
 
   const { setDoctors, aToken } = useContext(AdminContext);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setDocImg(reader.result); // Set the base64 string
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('file', file);
+      try {
+        const res = await axios.post(`${API_BASE_URL}/doctors/upload`, formData, {
+          headers: {
+            Authorization: `Bearer ${aToken}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        setDocImg(res.data.url);
+        toast.success('Image uploaded successfully');
+      } catch (err) {
+        toast.error('Failed to upload image');
+      }
     }
   };
 
@@ -49,13 +60,15 @@ const AddDoctor = () => {
         lastName,
         email,
         phone,
-        image: docImg.split(',')[1], // The base64 string, without the data URL prefix
-        specialty,
+        image: docImg, // Now a URL
+        speciality: specialty, // Use correct spelling
         degree,
-        experience: parseInt(experience),
+        experience,
         about,
         fees: Number(fees),
         isAvailable,
+        isActive,
+        address,
       };
 
       console.log("Sending with token:", aToken); // Log the token
@@ -82,6 +95,8 @@ const AddDoctor = () => {
       setAbout("");
       setFees("");
       setIsAvailable(true);
+      setIsActive(true);
+      setAddress("");
     } catch (error) {
       console.error("Error response from server:", error.response);
       const errorMessage = error.response?.data?.message || 
@@ -255,6 +270,33 @@ const AddDoctor = () => {
               />
               <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-primary/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
             </label>
+          </div>
+
+          {/* Active Status */}
+          <div className="flex flex-col gap-2">
+            <p className="font-medium">Active Status</p>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={() => setIsActive((prev) => !prev)}
+                className="form-checkbox h-5 w-5 text-primary"
+              />
+              <span>{isActive ? 'Active' : 'Inactive'}</span>
+            </label>
+          </div>
+
+          {/* Address */}
+          <div className="flex flex-col gap-2">
+            <p className="font-medium">Address</p>
+            <input
+              onChange={(e) => setAddress(e.target.value)}
+              value={address}
+              className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
+              type="text"
+              placeholder="e.g. 123 Main St, City"
+              required
+            />
           </div>
         </div>
 

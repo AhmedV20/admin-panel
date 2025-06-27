@@ -104,18 +104,18 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {dashData.latestAppointments && dashData.latestAppointments.map((appointment) => (
-                  <tr key={appointment._id} className="hover:bg-gray-50 transition-colors">
+                {dashData.latestAppointments && dashData.latestAppointments.map((appointment, idx) => (
+                  <tr key={appointment.id || idx} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <img
-                          src={appointment.userData?.image}
+                          src={appointment.doctorImage || assets.default_user}
                           alt="Patient"
                           className="w-10 h-10 rounded-full mr-3 object-cover"
                         />
                         <div>
                           <p className="font-medium text-gray-800">
-                            {appointment.userData?.name}
+                            {appointment.patientName || appointment.PatientName || "Unknown"}
                           </p>
                         </div>
                       </div>
@@ -123,27 +123,27 @@ const Dashboard = () => {
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <img
-                          src={appointment.docData?.image}
+                          src={appointment.doctorImage || assets.default_user}
                           alt="Doctor"
                           className="w-10 h-10 rounded-full mr-3 object-cover"
                         />
                         <div>
                           <p className="font-medium text-gray-800">
-                            Dr. {appointment.docData?.name}
+                            Dr. {appointment.doctorName || appointment.DoctorName || "Unknown"}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-700">{formatDate(appointment.slotDate)}</td>
-                    <td className="px-6 py-4 text-gray-700">{appointment.time}</td>
+                    <td className="px-6 py-4 text-gray-700">{formatDate(appointment.appointmentDate || appointment.AppointmentDate)}</td>
+                    <td className="px-6 py-4 text-gray-700">{appointment.appointmentTime || appointment.AppointmentTime}</td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        appointment.isCompleted ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                        (appointment.status || appointment.Status) === "Completed" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
                       }`}>
-                        {appointment.isCompleted ? "Completed" : "Pending"}
+                        {appointment.status || appointment.Status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 font-medium text-gray-800">${appointment.fees}</td>
+                    <td className="px-6 py-4 font-medium text-gray-800">${appointment.fees || appointment.Fees}</td>
                   </tr>
                 ))}
               </tbody>
