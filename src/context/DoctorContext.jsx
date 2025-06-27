@@ -102,7 +102,21 @@ const DoctorContextProvider = (props) => {
 
   const updateDoctorProfile = async (profileData) => {
     try {
-      const res = await axios.patch(`${API_BASE_URL}/doctors/me`, profileData, {
+      // Map the frontend data to match the backend's DoctorProfileUpdateRequest DTO
+      const updateData = {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        phoneNumber: profileData.phone, // Map phone to phoneNumber
+        degree: profileData.degree,
+        experience: profileData.experience,
+        about: profileData.about,
+        address: profileData.address,
+        fees: profileData.fees,
+        image: profileData.image
+        // Note: specialty is intentionally excluded as it should not be editable
+      };
+
+      const res = await axios.patch(`${API_BASE_URL}/doctors/me`, updateData, {
         headers: { Authorization: `Bearer ${dToken}` }
       });
       setDoctor(res.data);

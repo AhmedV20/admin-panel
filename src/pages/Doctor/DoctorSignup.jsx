@@ -81,8 +81,8 @@ const DoctorSignup = () => {
   };
 
   return (
-    <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center mt-5">
-      <div className="flex flex-col gap-4 m-auto items-start p-5 min-w-[340px] sm:min-w-96 border border-gray-300 rounded-2xl text-[#5E5E5E] text-sm shadow-xl bg-white w-full max-w-md">
+    <form onSubmit={onSubmitHandler} className="min-h-[80vh] flex items-center mt-10">
+      <div className="flex flex-col gap-4 m-auto items-start p-10 min-w-[340px] sm:min-w-96 border border-gray-300 rounded-2xl text-[#5E5E5E] text-sm shadow-xl bg-white">
         <p className="text-2xl font-semibold m-auto mb-2 text-primary">Doctor Signup</p>
         <div className="w-full flex gap-3">
         <div className="w-full">

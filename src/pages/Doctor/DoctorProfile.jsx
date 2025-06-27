@@ -25,8 +25,10 @@ const DoctorProfile = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
     const formData = new FormData();
     formData.append("Picture", file);
+    
     try {
       const res = await fetch("https://authappapi.runasp.net/api/profile-pictures/upload", {
         method: "POST",
@@ -66,6 +68,25 @@ const DoctorProfile = () => {
     setIsEdit(false);
   };
 
+  // Helper function to format experience
+  const formatExperience = (experience) => {
+    if (!experience) return "0 years";
+    // Remove "years" if already present and add it back
+    const cleanExp = experience.toString().replace(/\s*years?/i, '');
+    return `${cleanExp} years`;
+  };
+
+  // Helper function to get clean experience number
+  const getCleanExperience = (experience) => {
+    if (!experience) return "0";
+    return experience.toString().replace(/\s*years?/i, '');
+  };
+
+  // Default image fallback
+  const getDefaultImage = () => {
+    return "https://authappapi.runasp.net/profile-pictures/defaults/default-picture-profile.png";
+  };
+
   if (loading || !profileData) {
     return (
       <div className="p-6 flex justify-center items-center">
@@ -98,26 +119,36 @@ const DoctorProfile = () => {
       <div className="bg-white rounded-2xl border border-gray-300 shadow-lg overflow-hidden">
         <div className="p-8">
           <form onSubmit={onUpdateHandler} className="flex flex-col lg:flex-row gap-8">
-            {/* Profile Image */}
-            <div className="lg:w-1/3">
-              <div className="text-center">
+            {/* Profile Image Section */}
+            <div className="lg:w-1/3 flex flex-col items-center">
+              <div className="relative">
                 <img
-                  src={profileData.image || "https://via.placeholder.com/256x256?text=Doctor+Image"}
+                  src={profileData.image || getDefaultImage()}
                   alt="Doctor"
-                  className="w-48 h-48 rounded-2xl mx-auto mb-4 object-cover border-4 border-gray-200"
+                  className="w-48 h-48 rounded-2xl object-cover border-4 border-gray-200 shadow-lg"
                   onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/256x256?text=Doctor+Image";
+                    e.target.src = getDefaultImage();
                   }}
                 />
                 {isEdit && (
-                  <div className="mt-2">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} />
+                  <div className="mt-4 text-center">
+                    <label className="bg-primary text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-primary/90 transition-all shadow-md">
+                      Upload New Image
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
                 )}
+              </div>
+              <div className="text-center mt-4">
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">
                   Dr. {profileData.firstName} {profileData.lastName}
                 </h2>
-                <p className="text-gray-600 mb-4">{profileData.specialty}</p>
+                <p className="text-gray-600">{profileData.speciality || profileData.specialty}</p>
               </div>
             </div>
 
@@ -175,24 +206,13 @@ const DoctorProfile = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Specialty</label>
-                    <select
+                    <input
+                      type="text"
                       name="specialty"
-                      value={profileData.specialty || ''}
-                      onChange={handleInputChange}
-                      disabled={!isEdit}
+                      value={profileData.speciality || profileData.specialty || ''}
+                      disabled={true} // Specialty should not be editable
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-500"
-                    >
-                      <option value="General physician">General physician</option>
-                      <option value="Gynecologist">Gynecologist</option>
-                      <option value="Dermatologist">Dermatologist</option>
-                      <option value="Pediatricians">Pediatricians</option>
-                      <option value="Neurologist">Neurologist</option>
-                      <option value="Gastroenterologist">Gastroenterologist</option>
-                      <option value="Cardiologist">Cardiologist</option>
-                      <option value="Orthopedist">Orthopedist</option>
-                      <option value="Psychiatrist">Psychiatrist</option>
-                      <option value="Ophthalmologist">Ophthalmologist</option>
-                    </select>
+                    />
                   </div>
 
                   <div>
@@ -210,11 +230,12 @@ const DoctorProfile = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Experience (Years)</label>
                     <input
-                      type="number"
+                      type="text"
                       name="experience"
-                      value={profileData.experience || 0}
+                      value={isEdit ? getCleanExperience(profileData.experience) : formatExperience(profileData.experience)}
                       onChange={handleInputChange}
                       disabled={!isEdit}
+                      placeholder="e.g., 5"
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-500"
                     />
                   </div>
