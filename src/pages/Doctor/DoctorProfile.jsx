@@ -20,10 +20,49 @@ const DoctorProfile = () => {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
-  
+
+  // Image upload handler
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("Picture", file);
+    try {
+      const res = await fetch("https://authappapi.runasp.net/api/profile-pictures/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("dToken")}` },
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.fileUrl || data.FileUrl) {
+        setProfileData((prev) => ({ ...prev, image: data.fileUrl || data.FileUrl }));
+        toast.success("Profile image uploaded!");
+      } else {
+        toast.error(data.message || "Failed to upload image");
+      }
+    } catch (err) {
+      toast.error("Failed to upload image");
+    }
+  };
+
   const onUpdateHandler = async (e) => {
     e.preventDefault();
     await updateDoctorProfile(profileData);
+    // Request admin approval after saving
+    try {
+      const res = await fetch("https://authappapi.runasp.net/api/doctors/request-approval", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("dToken")}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Approval request sent to admin.");
+      } else {
+        toast.error(data.message || "Failed to notify admin");
+      }
+    } catch (err) {
+      toast.error("Failed to notify admin");
+    }
     setIsEdit(false);
   };
 
@@ -70,17 +109,15 @@ const DoctorProfile = () => {
                     e.target.src = "https://via.placeholder.com/256x256?text=Doctor+Image";
                   }}
                 />
+                {isEdit && (
+                  <div className="mt-2">
+                    <input type="file" accept="image/*" onChange={handleImageUpload} />
+                  </div>
+                )}
                 <h2 className="text-xl font-semibold text-gray-800 mb-2">
                   Dr. {profileData.firstName} {profileData.lastName}
                 </h2>
                 <p className="text-gray-600 mb-4">{profileData.specialty}</p>
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                  profileData.isAvailable 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-red-100 text-red-800"
-                }`}>
-                  {profileData.isAvailable ? "Available" : "Unavailable"}
-                </div>
               </div>
             </div>
 
@@ -205,20 +242,6 @@ const DoctorProfile = () => {
                     rows={4}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all disabled:bg-gray-50 disabled:text-gray-500"
                   />
-                </div>
-
-                <div>
-                  <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
-                    <label className="block text-sm font-medium text-gray-700">Available for Appointments</label>
-                    <input
-                      type="checkbox"
-                      name="isAvailable"
-                      checked={profileData.isAvailable || false}
-                      onChange={handleInputChange}
-                      disabled={!isEdit}
-                      className="rounded border-gray-300 text-primary focus:ring-primary h-5 w-5"
-                    />
-                  </div>
                 </div>
               </div>
             </div>

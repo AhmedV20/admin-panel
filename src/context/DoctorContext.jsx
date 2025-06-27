@@ -44,21 +44,32 @@ const DoctorContextProvider = (props) => {
     setLoading(true);
     try {
       const config = { headers: { Authorization: `Bearer ${token}` } };
-      
-      const [doctorRes, appointmentsRes, inquiriesRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/doctors/me`, config),
+      // Fetch doctor first, handle error separately
+      let doctorRes;
+      try {
+        doctorRes = await axios.get(`${API_BASE_URL}/doctors/me`, config);
+        setDoctor(doctorRes.data);
+      } catch (err) {
+        setDoctor(null);
+        setAppointments([]);
+        setInquiries([]);
+        setStats({ total: 0, completed: 0, cancelled: 0, pending: 0, rejected: 0, earnings: 0 });
+        setRecentAppointment(null);
+        toast.error("Failed to fetch critical doctor data. Please try logging in again.");
+        setLoading(false);
+        return;
+      }
+      // If doctor exists, fetch the rest
+      const [appointmentsRes, inquiriesRes] = await Promise.all([
         axios.get(`${API_BASE_URL}/appointments`, config),
-        axios.get(`${API_BASE_URL}/inquiries`, config) 
+        axios.get(`${API_BASE_URL}/inquiries`, config)
       ]);
-
-      setDoctor(doctorRes.data);
       setAppointments(appointmentsRes.data);
       setInquiries(inquiriesRes.data);
       await fetchDoctorStats(token);
       await fetchRecentAppointment(token);
-
     } catch (error) {
-      toast.error("Failed to fetch critical doctor data. Please try logging in again.");
+      toast.error("Failed to fetch additional doctor data.");
       console.error("Data fetch error:", error);
     } finally {
       setLoading(false);
