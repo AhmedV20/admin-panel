@@ -114,6 +114,65 @@ const DoctorContextProvider = (props) => {
     }
   };
 
+  // NEW: Approve appointment with optional note
+  const approveAppointment = async (appointmentId, note = "") => {
+    try {
+      await axios.patch(`${API_BASE_URL}/appointments/${appointmentId}/approve`, {
+        note: note
+      }, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      toast.success("Appointment approved successfully.");
+      await fetchAllDoctorData(dToken); // Re-fetch all data
+    } catch (error) {
+      toast.error("Failed to approve appointment.");
+      throw error;
+    }
+  };
+
+  // NEW: Reject appointment with reason and optional note
+  const rejectAppointment = async (appointmentId, reason, note = "") => {
+    try {
+      await axios.patch(`${API_BASE_URL}/appointments/${appointmentId}/reject`, {
+        reason: reason,
+        note: note
+      }, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      toast.success("Appointment rejected successfully.");
+      await fetchAllDoctorData(dToken); // Re-fetch all data
+    } catch (error) {
+      toast.error("Failed to reject appointment.");
+      throw error;
+    }
+  };
+
+  // NEW: Get appointment analytics
+  const getAppointmentAnalytics = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/appointments/analytics`, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching appointment analytics:", error);
+      return null;
+    }
+  };
+
+  // NEW: Get pending appointments needing response
+  const getPendingAppointmentsNeedingResponse = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/appointments/pending-response`, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching pending appointments:", error);
+      return [];
+    }
+  };
+
   const updateDoctorProfile = async (profileData) => {
     try {
       // Format experience as "X Years" before sending to backend
@@ -292,6 +351,10 @@ const DoctorContextProvider = (props) => {
     approvalStatus,
     completeAppointment,
     cancelAppointment,
+    approveAppointment,
+    rejectAppointment,
+    getAppointmentAnalytics,
+    getPendingAppointmentsNeedingResponse,
     updateDoctorProfile,
     fetchDoctorStats,
     fetchRecentAppointment,

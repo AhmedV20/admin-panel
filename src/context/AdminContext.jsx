@@ -211,7 +211,21 @@ const AdminContextProvider = (props) => {
       toast.success("Appointment cancelled successfully");
       getAllAppointments();
     } catch (error) {
-      toast.error("Error cancelling appointment");
+      toast.error("Failed to cancel appointment");
+    }
+  };
+
+  // NEW: Send reminder to doctor for pending appointments
+  const sendReminderToDoctor = async (appointmentId) => {
+    try {
+      await axios.post(`${API_BASE_URL}/appointments/send-reminder/${appointmentId}`, {}, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Reminder sent to doctor successfully");
+      getAllAppointments();
+    } catch (error) {
+      toast.error("Failed to send reminder to doctor");
+      throw error;
     }
   };
 
@@ -482,6 +496,7 @@ const AdminContextProvider = (props) => {
     getInquiriesByDoctor,
     deleteInquiry,
     notifyInquiryUser,
+    sendReminderToDoctor,
   };
 
   return (
