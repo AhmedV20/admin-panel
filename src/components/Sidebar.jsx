@@ -1,12 +1,18 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { AdminContext } from "../context/AdminContext";
 import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
 import { DoctorContext } from "../context/DoctorContext";
 
 const Sidebar = () => {
-  const { aToken } = useContext(AdminContext);
+  const { aToken, approvalRequestsCount, getApprovalRequestsCount } = useContext(AdminContext);
   const { dToken } = useContext(DoctorContext);
+
+  useEffect(() => {
+    if (aToken) {
+      getApprovalRequestsCount();
+    }
+  }, [aToken]);
 
   return (
     <div className="min-h-screen bg-white border-r border-gray-300">
@@ -58,6 +64,25 @@ const Sidebar = () => {
           >
             <img src={assets.people_icon} alt="" />
             <p className="hidden md:block">Doctors List</p>
+          </NavLink>
+
+          <NavLink
+            className={({ isActive }) =>
+              `flex items-center gap-3 py-3.5 px-3 md:px-9 md:min-w-72 cursor-pointer ${
+                isActive ? "bg-[#F2F3FF] border-r-4 border-[#5F6FFF]" : ""
+              }`
+            }
+            to={"approval-requests"}
+          >
+            <div className="relative">
+              <img src={assets.appointment_icon} alt="" />
+              {approvalRequestsCount > 0 && (
+                <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  {approvalRequestsCount > 99 ? '99+' : approvalRequestsCount}
+                </span>
+              )}
+            </div>
+            <p className="hidden md:block">Approval Requests</p>
           </NavLink>
 
           <NavLink

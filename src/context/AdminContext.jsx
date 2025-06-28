@@ -93,8 +93,10 @@ const AdminContextProvider = (props) => {
       isCompleted: false
     }
   ]);
-  const [dashData, setDashData] = useState(null);
   const [users, setUsers] = useState([]);
+  const [dashData, setDashData] = useState(null);
+  const [approvalRequests, setApprovalRequests] = useState([]);
+  const [approvalRequestsCount, setApprovalRequestsCount] = useState(0);
 
   const getAllDoctors = async () => {
     try {
@@ -293,7 +295,80 @@ const AdminContextProvider = (props) => {
       });
       toast.success("Notification sent to user");
     } catch (error) {
-      toast.error("Failed to send notification.");
+      toast.error("Failed to send notification");
+    }
+  };
+
+  // Doctor Approval Request Functions
+  const getApprovalRequests = async (status = "Pending") => {
+    try {
+      const url = status === "All" 
+        ? `${API_BASE_URL}/doctors/approval-requests` 
+        : `${API_BASE_URL}/doctors/approval-requests?status=${status}`;
+      
+      const res = await axios.get(url, {
+        headers: { Authorization: `Bearer ${aToken}` }
+      });
+      setApprovalRequests(res.data);
+      
+      // Update pending count for badge
+      if (status === "Pending" || status === "All") {
+        const pendingRes = await axios.get(`${API_BASE_URL}/doctors/approval-requests?status=Pending`, {
+          headers: { Authorization: `Bearer ${aToken}` }
+        });
+        setApprovalRequestsCount(pendingRes.data.length);
+      }
+      
+      return res.data;
+    } catch (error) {
+      toast.error("Failed to fetch approval requests");
+      setApprovalRequests([]);
+      return [];
+    }
+  };
+
+  const approveDoctor = async (doctorId) => {
+    try {
+      await axios.post(`${API_BASE_URL}/doctors/${doctorId}/approve`, {}, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Doctor approved successfully");
+      // Refresh approval requests
+      await getApprovalRequests();
+      // Refresh doctors list
+      await getAllDoctors();
+    } catch (error) {
+      toast.error("Failed to approve doctor");
+      throw error;
+    }
+  };
+
+  const rejectDoctor = async (doctorId, adminNote) => {
+    try {
+      await axios.post(`${API_BASE_URL}/doctors/${doctorId}/reject`, { adminNote }, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Doctor rejected successfully");
+      // Refresh approval requests
+      await getApprovalRequests();
+      // Refresh doctors list
+      await getAllDoctors();
+    } catch (error) {
+      toast.error("Failed to reject doctor");
+      throw error;
+    }
+  };
+
+  const getApprovalRequestsCount = async () => {
+    try {
+      const res = await axios.get(`${API_BASE_URL}/doctors/approval-requests?status=Pending`, {
+        headers: { Authorization: `Bearer ${aToken}` }
+      });
+      setApprovalRequestsCount(res.data.length);
+      return res.data.length;
+    } catch (error) {
+      setApprovalRequestsCount(0);
+      return 0;
     }
   };
 
@@ -322,6 +397,14 @@ const AdminContextProvider = (props) => {
     updateUser,
     deleteUser,
     notifyUser,
+    approvalRequests,
+    setApprovalRequests,
+    approvalRequestsCount,
+    setApprovalRequestsCount,
+    getApprovalRequests,
+    approveDoctor,
+    rejectDoctor,
+    getApprovalRequestsCount,
   };
 
   return (

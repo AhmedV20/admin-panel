@@ -21,6 +21,7 @@ const DoctorContextProvider = (props) => {
   });
   const [recentAppointment, setRecentAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [approvalStatus, setApprovalStatus] = useState(null);
 
   const fetchDoctorStats = async (token) => {
     const config = { headers: { Authorization: `Bearer ${token}` } };
@@ -50,14 +51,27 @@ const DoctorContextProvider = (props) => {
         doctorRes = await axios.get(`${API_BASE_URL}/doctors/me`, config);
         setDoctor(doctorRes.data);
       } catch (err) {
-        setDoctor(null);
-        setAppointments([]);
-        setInquiries([]);
-        setStats({ total: 0, completed: 0, cancelled: 0, pending: 0, rejected: 0, earnings: 0 });
-        setRecentAppointment(null);
-        toast.error("Failed to fetch critical doctor data. Please try logging in again.");
-        setLoading(false);
-        return;
+        if (err.response?.status === 404) {
+          // Doctor record not found - this is a setup issue
+          setDoctor(null);
+          setAppointments([]);
+          setInquiries([]);
+          setStats({ total: 0, completed: 0, cancelled: 0, pending: 0, rejected: 0, earnings: 0 });
+          setRecentAppointment(null);
+          toast.error("Doctor profile not found. Please contact administrator to complete your profile setup.");
+          setLoading(false);
+          return;
+        } else {
+          // Other errors (401, 500, etc.)
+          setDoctor(null);
+          setAppointments([]);
+          setInquiries([]);
+          setStats({ total: 0, completed: 0, cancelled: 0, pending: 0, rejected: 0, earnings: 0 });
+          setRecentAppointment(null);
+          toast.error("Failed to fetch critical doctor data. Please try logging in again.");
+          setLoading(false);
+          return;
+        }
       }
       // If doctor exists, fetch the rest
       const [appointmentsRes, inquiriesRes] = await Promise.all([
@@ -102,13 +116,21 @@ const DoctorContextProvider = (props) => {
 
   const updateDoctorProfile = async (profileData) => {
     try {
+      // Format experience as "X Years" before sending to backend
+      const formatExperienceForBackend = (experience) => {
+        if (!experience) return "0 Years";
+        // Remove "years" if already present and add it back with proper capitalization
+        const cleanExp = experience.toString().replace(/\s*years?/i, '');
+        return `${cleanExp} Years`;
+      };
+
       // Map the frontend data to match the backend's DoctorProfileUpdateRequest DTO
       const updateData = {
         firstName: profileData.firstName,
         lastName: profileData.lastName,
         phoneNumber: profileData.phone, // Map phone to phoneNumber
         degree: profileData.degree,
-        experience: profileData.experience,
+        experience: formatExperienceForBackend(profileData.experience), // Format as "X Years"
         about: profileData.about,
         address: profileData.address,
         fees: profileData.fees,
@@ -127,9 +149,68 @@ const DoctorContextProvider = (props) => {
     }
   };
 
+  // Function to refresh doctor data (for navigation issues)
+  const refreshDoctorData = async () => {
+    if (dToken) {
+      try {
+        setLoading(true);
+        await fetchAllDoctorData(dToken);
+      } catch (error) {
+        console.error("Error refreshing doctor data:", error);
+        // Don't show error toast for refresh operations to avoid spam
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  // Approval Status Functions
+  const getApprovalStatus = async () => {
+    if (!dToken) return null;
+    
+    try {
+      const res = await axios.get(`${API_BASE_URL}/doctors/me/approval-status`, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      setApprovalStatus(res.data);
+      return res.data;
+    } catch (error) {
+      console.error("Error fetching approval status:", error);
+      return null;
+    }
+  };
+
+  const requestApproval = async () => {
+    if (!dToken) return false;
+    
+    try {
+      const res = await axios.post(`${API_BASE_URL}/doctors/request-approval`, {}, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      
+      if (res.data.success) {
+        toast.success("Approval request sent successfully!");
+        // Refresh approval status
+        await getApprovalStatus();
+        return true;
+      } else {
+        toast.error(res.data.message || "Failed to send approval request");
+        return false;
+      }
+    } catch (error) {
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Failed to send approval request");
+      }
+      return false;
+    }
+  };
+
   useEffect(() => {
     if (dToken) {
       fetchAllDoctorData(dToken);
+      getApprovalStatus(); // Fetch approval status
     } else {
       setLoading(false);
     }
@@ -144,11 +225,15 @@ const DoctorContextProvider = (props) => {
     stats,
     recentAppointment,
     loading,
+    approvalStatus,
     completeAppointment,
     cancelAppointment,
     updateDoctorProfile,
     fetchDoctorStats,
     fetchRecentAppointment,
+    refreshDoctorData,
+    getApprovalStatus,
+    requestApproval,
   };
 
   return (

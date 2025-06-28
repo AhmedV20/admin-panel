@@ -3,7 +3,7 @@ import { assets } from "../../assets/assets";
 import { DoctorContext } from "../../context/DoctorContext";
 
 const DoctorDashboard = () => {
-  const { doctor, stats, recentAppointment, loading } = useContext(DoctorContext);
+  const { doctor, stats, recentAppointment, loading, approvalStatus } = useContext(DoctorContext);
 
   // Helper function to format date
   const formatDate = (dateString) => {
@@ -31,8 +31,11 @@ const DoctorDashboard = () => {
 
   if (loading && !doctor) {
     return (
-      <div className="p-6 flex justify-center items-center">
-        <p className="text-lg text-gray-600">Loading dashboard...</p>
+      <div className="p-6 flex justify-center items-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -43,6 +46,43 @@ const DoctorDashboard = () => {
         <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-xl">
           <p className="font-semibold">Your account is pending approval by the administrator. Please wait for activation.</p>
           <p className="mt-2 text-sm text-yellow-700">You can still edit your profile to make sure all your information is correct and appealing for approval.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check approval status and show appropriate message
+  if (approvalStatus && approvalStatus.status?.toLowerCase() === "rejected") {
+    return (
+      <div className="p-6">
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded-xl">
+          <p className="font-semibold">Your profile approval request was rejected.</p>
+          {approvalStatus.adminNote && (
+            <p className="mt-2 text-sm text-red-700">
+              <strong>Reason:</strong> {approvalStatus.adminNote}
+            </p>
+          )}
+          <p className="mt-2 text-sm text-red-700">
+            Please update your profile information and submit a new approval request.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (approvalStatus && approvalStatus.status?.toLowerCase() === "pending") {
+    return (
+      <div className="p-6">
+        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-xl">
+          <p className="font-semibold">Your approval request is pending review.</p>
+          <p className="mt-2 text-sm text-yellow-700">
+            Please wait for the administrator to review your profile. You will be notified once a decision is made.
+          </p>
+          {approvalStatus.requestDate && (
+            <p className="mt-2 text-sm text-yellow-700">
+              Request submitted on: {new Date(approvalStatus.requestDate).toLocaleDateString()}
+            </p>
+          )}
         </div>
       </div>
     );

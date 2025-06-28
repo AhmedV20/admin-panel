@@ -18,6 +18,7 @@ import AddDoctor from "./pages/Admin/AddDoctor";
 import DoctorsList from "./pages/Admin/DoctorsList";
 import EditDoctor from "./pages/Admin/EditDoctor";
 import UsersList from "./pages/Admin/UsersList";
+import DoctorApprovalRequests from "./pages/Admin/DoctorApprovalRequests";
 
 // Doctor Pages
 import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
@@ -45,6 +46,7 @@ const App = () => {
             <Route path="add-doctor" element={<AddDoctor />} />
             <Route path="doctors" element={<DoctorsList />} />
             <Route path="edit-doctor/:id" element={<EditDoctor />} />
+            <Route path="approval-requests" element={<DoctorApprovalRequests />} />
             <Route path="users" element={<UsersList />} />
           </Route>
         </Route>

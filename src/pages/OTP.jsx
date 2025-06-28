@@ -39,12 +39,13 @@ const OTP = () => {
         if (role === "Admin") {
           localStorage.setItem("aToken", res.data.accessToken);
           setAToken(res.data.accessToken);
+          navigate("/admin");
         } else if (role === "Doctor") {
           localStorage.setItem("dToken", res.data.accessToken);
           setDToken(res.data.accessToken);
+          navigate("/doctor");
         }
         toast.success("Verification successful!");
-        navigate("/"); 
       } else {
         toast.error(res.data.message || "Invalid OTP or error during verification.");
       }
