@@ -226,7 +226,7 @@ const DoctorProfile = () => {
       <div className="p-6 flex justify-center items-center min-h-[400px]">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-gray-600">Loading profile...</p>
+        <p className="text-lg text-gray-600">Loading profile...</p>
         </div>
       </div>
     );
@@ -359,14 +359,14 @@ const DoctorProfile = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">My Profile</h1>
         <div className="flex gap-3">
-          {!isEdit ? (
+        {!isEdit ? (
             <>
-              <button
-                onClick={() => setIsEdit(true)}
-                className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-all shadow-md"
-              >
-                Edit Profile
-              </button>
+          <button
+            onClick={() => setIsEdit(true)}
+            className="bg-primary text-white px-6 py-3 rounded-xl font-medium hover:bg-primary/90 transition-all shadow-md"
+          >
+            Edit Profile
+          </button>
               {approvalStatus && approvalStatus.status?.toLowerCase() !== "approved" && (
                 <button
                   onClick={handleRequestApproval}
@@ -381,14 +381,14 @@ const DoctorProfile = () => {
                 </button>
               )}
             </>
-          ) : (
+        ) : (
             <div className="flex gap-4">
-              <button
-                onClick={onUpdateHandler}
-                className="bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-all shadow-md"
-              >
-                Save Changes
-              </button>
+          <button
+            onClick={onUpdateHandler}
+            className="bg-green-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-green-700 transition-all shadow-md"
+          >
+            Save Changes
+          </button>
               <button
                 onClick={onCancelHandler}
                 className="bg-gray-600 text-white px-6 py-3 rounded-xl font-medium hover:bg-gray-700 transition-all shadow-md"
@@ -396,7 +396,7 @@ const DoctorProfile = () => {
                 Cancel
               </button>
             </div>
-          )}
+        )}
         </div>
       </div>
 
@@ -459,9 +459,9 @@ const DoctorProfile = () => {
                   </div>
                 )}
                 <div className="mt-4">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                    Dr. {profileData.firstName} {profileData.lastName}
-                  </h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                  Dr. {profileData.firstName} {profileData.lastName}
+                </h2>
                   <p className="text-gray-600">{profileData.speciality || profileData.specialty}</p>
                 </div>
               </div>
