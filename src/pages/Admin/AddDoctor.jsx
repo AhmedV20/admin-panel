@@ -196,11 +196,12 @@ const AddDoctor = () => {
               value={specialty}
               className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
             >
-              <option value="General physician">General physician</option>
-              <option value="Cardiology">Cardiology</option>
-              <option value="Dermatology">Dermatology</option>
-              <option value="Neurology">Neurology</option>
-              <option value="Pediatrics">Pediatrics</option>
+              <option value="GeneralPhysician">General Physician</option>
+              <option value="Gynecologist">Gynecologist</option>
+              <option value="Dermatologist">Dermatologist</option>
+              <option value="Pediatrician">Pediatrician</option>
+              <option value="Neurologist">Neurologist</option>
+              <option value="Gastroenterologist">Gastroenterologist</option>
             </select>
           </div>
 

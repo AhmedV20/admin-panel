@@ -198,12 +198,76 @@ const DoctorContextProvider = (props) => {
         return false;
       }
     } catch (error) {
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else {
-        toast.error("Failed to send approval request");
-      }
+      console.error("Error requesting approval:", error);
+      toast.error("Failed to send approval request");
       return false;
+    }
+  };
+
+  // NEW: Inquiry Management Functions
+  const getInquiriesBySpecialty = async (specialty) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/inquiries/specialty/${specialty}`, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      return response.data || [];
+    } catch (error) {
+      toast.error("Failed to fetch inquiries");
+      console.error("Error fetching inquiries by specialty:", error);
+      return [];
+    }
+  };
+
+  const respondToInquiry = async (inquiryId, responseData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/inquiries/${inquiryId}/respond`, responseData, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      toast.success("Response submitted successfully");
+      return response.data;
+    } catch (error) {
+      toast.error("Failed to submit response");
+      console.error("Error responding to inquiry:", error);
+      throw error;
+    }
+  };
+
+  const respondToInquiryWithFiles = async (inquiryId, responseData) => {
+    try {
+      const formData = new FormData();
+      formData.append('response', responseData.response);
+      
+      if (responseData.responseFiles && responseData.responseFiles.length > 0) {
+        responseData.responseFiles.forEach(file => {
+          formData.append('responseFiles', file);
+        });
+      }
+
+      const response = await axios.post(`${API_BASE_URL}/inquiries/${inquiryId}/respond/upload`, formData, {
+        headers: { 
+          Authorization: `Bearer ${dToken}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      toast.success("Response with files submitted successfully");
+      return response.data;
+    } catch (error) {
+      toast.error("Failed to submit response with files");
+      console.error("Error responding to inquiry with files:", error);
+      throw error;
+    }
+  };
+
+  const getMyInquiryResponses = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/inquiries/doctor/${doctor?.userId}`, {
+        headers: { Authorization: `Bearer ${dToken}` }
+      });
+      return response.data || [];
+    } catch (error) {
+      toast.error("Failed to fetch your responses");
+      console.error("Error fetching doctor's inquiry responses:", error);
+      return [];
     }
   };
 
@@ -234,6 +298,10 @@ const DoctorContextProvider = (props) => {
     refreshDoctorData,
     getApprovalStatus,
     requestApproval,
+    getInquiriesBySpecialty,
+    respondToInquiry,
+    respondToInquiryWithFiles,
+    getMyInquiryResponses,
   };
 
   return (

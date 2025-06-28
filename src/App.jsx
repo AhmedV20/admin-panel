@@ -19,12 +19,13 @@ import DoctorsList from "./pages/Admin/DoctorsList";
 import EditDoctor from "./pages/Admin/EditDoctor";
 import UsersList from "./pages/Admin/UsersList";
 import DoctorApprovalRequests from "./pages/Admin/DoctorApprovalRequests";
+import AdminInquiries from "./pages/Admin/AdminInquiries";
 
 // Doctor Pages
 import DoctorDashboard from "./pages/Doctor/DoctorDashboard";
 import DoctorAppointments from "./pages/Doctor/DoctorAppointments";
 import DoctorProfile from "./pages/Doctor/DoctorProfile";
-import Inquiries from "./pages/Doctor/Inquiries";
+import DoctorInquiries from "./pages/Doctor/DoctorInquiries";
 
 const App = () => {
   return (
@@ -48,6 +49,7 @@ const App = () => {
             <Route path="edit-doctor/:id" element={<EditDoctor />} />
             <Route path="approval-requests" element={<DoctorApprovalRequests />} />
             <Route path="users" element={<UsersList />} />
+            <Route path="inquiries" element={<AdminInquiries />} />
           </Route>
         </Route>
 
@@ -58,7 +60,7 @@ const App = () => {
             <Route path="dashboard" element={<DoctorDashboard />} />
             <Route path="appointments" element={<DoctorAppointments />} />
             <Route path="profile" element={<DoctorProfile />} />
-            <Route path="inquiries" element={<Inquiries />} />
+            <Route path="inquiries" element={<DoctorInquiries />} />
           </Route>
         </Route>
 

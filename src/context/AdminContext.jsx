@@ -18,10 +18,10 @@ const AdminContextProvider = (props) => {
       email: "ahmed@example.com",
       phone: "0123456789",
       image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e5e7eb'/%3E%3Ctext x='75' y='85' text-anchor='middle' font-family='Arial' font-size='16' fill='%236b7280'%3EDr. Ahmed%3C/text%3E%3C/svg%3E",
-      speciality: "Cardiology",
+      speciality: "GeneralPhysician",
       degree: "MBBS, MD",
       experience: "10 years",
-      about: "Experienced cardiologist with expertise in interventional cardiology",
+      about: "Experienced general physician with expertise in primary care",
       fees: 500,
       isAvailable: true
     },
@@ -32,7 +32,7 @@ const AdminContextProvider = (props) => {
       email: "fatima@example.com",
       phone: "0987654321",
       image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e5e7eb'/%3E%3Ctext x='75' y='85' text-anchor='middle' font-family='Arial' font-size='16' fill='%236b7280'%3EDr. Fatima%3C/text%3E%3C/svg%3E",
-      speciality: "Pediatrics",
+      speciality: "Pediatrician",
       degree: "MBBS, DCH",
       experience: "8 years",
       about: "Specialized in pediatric care and child development",
@@ -361,14 +361,86 @@ const AdminContextProvider = (props) => {
 
   const getApprovalRequestsCount = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/doctors/approval-requests?status=Pending`, {
-        headers: { Authorization: `Bearer ${aToken}` }
+      const response = await axios.get(`${API_BASE_URL}/doctor-approval-requests/count`, {
+        headers: { Authorization: `Bearer ${aToken}` },
       });
-      setApprovalRequestsCount(res.data.length);
-      return res.data.length;
+      setApprovalRequestsCount(response.data.count);
+      return response.data.count;
     } catch (error) {
-      setApprovalRequestsCount(0);
+      console.error("Error fetching approval requests count:", error);
       return 0;
+    }
+  };
+
+  // NEW: Inquiry Management Functions
+  const getAllInquiries = async (filters = {}) => {
+    try {
+      let url = `${API_BASE_URL}/inquiries`;
+      const params = [];
+      if (filters.specialty) params.push(`specialty=${filters.specialty}`);
+      if (filters.status) params.push(`status=${filters.status}`);
+      if (params.length) url += `?${params.join('&')}`;
+      
+      const response = await axios.get(url, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      return response.data || [];
+    } catch (error) {
+      toast.error("Failed to fetch inquiries");
+      console.error("Error fetching inquiries:", error);
+      return [];
+    }
+  };
+
+  const getInquiryAnalytics = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/inquiries/analytics`, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      return response.data;
+    } catch (error) {
+      toast.error("Failed to fetch inquiry analytics");
+      console.error("Error fetching inquiry analytics:", error);
+      return null;
+    }
+  };
+
+  const getInquiriesByDoctor = async (doctorId) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/inquiries/doctor/${doctorId}`, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      return response.data || [];
+    } catch (error) {
+      toast.error("Failed to fetch doctor inquiries");
+      console.error("Error fetching doctor inquiries:", error);
+      return [];
+    }
+  };
+
+  const deleteInquiry = async (inquiryId) => {
+    try {
+      await axios.delete(`${API_BASE_URL}/inquiries/${inquiryId}`, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Inquiry deleted successfully");
+      return true;
+    } catch (error) {
+      toast.error("Failed to delete inquiry");
+      console.error("Error deleting inquiry:", error);
+      return false;
+    }
+  };
+
+  const notifyInquiryUser = async (userId, message) => {
+    try {
+      await axios.post(`${API_BASE_URL}/users/${userId}/notify`, { message }, {
+        headers: { Authorization: `Bearer ${aToken}` },
+      });
+      toast.success("Notification sent to user");
+    } catch (error) {
+      toast.error("Failed to send notification");
+      console.error("Error sending notification:", error);
     }
   };
 
@@ -405,6 +477,11 @@ const AdminContextProvider = (props) => {
     approveDoctor,
     rejectDoctor,
     getApprovalRequestsCount,
+    getAllInquiries,
+    getInquiryAnalytics,
+    getInquiriesByDoctor,
+    deleteInquiry,
+    notifyInquiryUser,
   };
 
   return (
